@@ -13,6 +13,7 @@ body {
   background-size: 400% 400%;
   animation: gradientBG 60s ease infinite;
   transition: background 1s ease-in-out;
+  -webkit-tap-highlight-color: transparent;
 }
 @keyframes gradientBG {
   0% {background-position:0% 50%;}
@@ -20,6 +21,7 @@ body {
   100% {background-position:0% 50%;}
 }
 canvas {position:fixed; top:0; left:0; width:100%; height:100%; z-index:0;}
+
 .window {
   position:relative; z-index:1;
   max-width:600px;
@@ -38,18 +40,21 @@ canvas {position:fixed; top:0; left:0; width:100%; height:100%; z-index:0;}
 }
 @keyframes fadeInUp {to {opacity:1; transform:translateY(0);}}
 
+.header {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+  margin-bottom:10px;
+  text-align:center;
+}
 h1 {
   margin:0;
   color:#0a5db6;
   text-shadow: 0 0 5px #fff;
-  text-align:center;
-}
-
-.button-row {
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin:10px 0 20px 0;
+  font-size:1.8rem;
+  white-space:nowrap;
 }
 
 button.gradient-btn {
@@ -57,17 +62,21 @@ button.gradient-btn {
   color:white;
   border:none;
   border-radius:8px;
-  width:40px;
-  height:40px;
+  width:38px;
+  height:38px;
   font-size:20px;
   cursor:pointer;
   box-shadow:0 4px 10px rgba(0,0,0,0.2);
   transition:all 0.3s;
+  flex-shrink:0;
 }
 button.gradient-btn:hover {
   transform:scale(1.1);
   box-shadow:0 8px 20px rgba(0,0,0,0.3);
   filter:brightness(1.2);
+}
+button.gradient-btn:active {
+  transform:scale(0.95);
 }
 
 .box {
@@ -97,10 +106,13 @@ button.gradient-btn:hover {
 .time {text-align:center; font-size:18px; color:#000; font-weight:700; margin-bottom:12px;}
 
 @media (max-width:480px){
+  h1 {font-size:1.5rem;}
+  button.gradient-btn {width:34px; height:34px; font-size:18px;}
   .big {font-size:24px;}
   .muted {font-size:14px;}
   .time {font-size:16px;}
   .box {padding:12px;}
+  .header {gap:6px;}
 }
 </style>
 </head>
@@ -108,13 +120,9 @@ button.gradient-btn:hover {
 <canvas id="bgCanvas"></canvas>
 
 <div class="window">
-  <h1>Monero Dashboard</h1>
-
-  <!-- Hier ist jetzt Platz für mehrere Buttons nebeneinander -->
-  <div class="button-row">
+  <div class="header">
+    <h1>Monero Dashboard</h1>
     <button class="gradient-btn" onclick="cycleGradient()">🎨</button>
-    <!-- Hier kannst du später einfach mehr Buttons hinzufügen -->
-    <!-- Beispiel: <button class="gradient-btn">⚙️</button> -->
   </div>
 
   <div class="time" id="realtime">—</div>
@@ -208,7 +216,7 @@ async function updateWallet(){
   animateValueGlow("xmr", displayedXMR, xmr,8," XMR");
   document.getElementById("fiat").textContent = eurVal.toFixed(2)+" € | "+usdVal.toFixed(2)+" USDT";
   animateValueGlow("xmrPerHour", displayedXMRHour, xmrPerHour,8," XMR/h");
-  animateValueGlow("xmrPerDay", displayedXMRDay, xmrPerDay,8," XMR/Tag");
+  animateValueGlow("xmrPerDay", displayedXMRDay, xmrPerDay,8," XMR/d");
 
   displayedHash = hash/1000;
   displayedXMR = xmr;
