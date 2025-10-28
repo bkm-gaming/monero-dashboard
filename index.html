@@ -135,7 +135,7 @@ button.gradient-btn:active {
   <div class="box">
     <div class="small">Balance</div>
     <div id="xmr" class="big">— XMR</div>
-    <div class="muted" id="fiat">— € | — USDT</div>
+    <div class="muted" id="fiat">— € | — USDT | — ₽</div>
   </div>
 
   <div class="box">
@@ -152,10 +152,10 @@ const WALLET = "4BJs6dWYWVrRJtxuAmGREsMZcg8nXWk4oPENJEKVnVds6h1MeDuKPMuVEVYfChCj
 const REFRESH_WALLET = 10000;
 const REFRESH_PRICE = 60000;
 const WALLET_STATS_API = `https://api.moneroocean.stream/miner/${WALLET}/stats`;
-const PRICE_API = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=eur,usd";
+const PRICE_API = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=eur,usd,rub";
 const POOL_STATS_API = "https://api.moneroocean.stream/pool/stats";
 
-let lastPrice = { eur:0, usd:0 };
+let lastPrice = { eur:0, usd:0, rub:0 };
 let lastPriceTime = 0;
 let displayedHash = 0;
 let displayedXMR = 0;
@@ -197,12 +197,14 @@ async function updateWallet(){
     if(priceResp && priceResp.monero){
       lastPrice.eur = safeNumber(priceResp.monero.eur);
       lastPrice.usd = safeNumber(priceResp.monero.usd);
+      lastPrice.rub = safeNumber(priceResp.monero.rub);
       lastPriceTime = Date.now();
     }
   }
 
   const eurVal = xmr*lastPrice.eur;
   const usdVal = xmr*lastPrice.usd;
+  const rubVal = xmr*lastPrice.rub;
 
   const poolStats = await fetchJson(POOL_STATS_API) || {};
   const poolHashrate = safeNumber(poolStats.hashrate || 1e9); 
@@ -214,9 +216,10 @@ async function updateWallet(){
 
   animateValueGlow("walletHash", displayedHash, hash/1000,2," kH/s");
   animateValueGlow("xmr", displayedXMR, xmr,8," XMR");
-  document.getElementById("fiat").textContent = eurVal.toFixed(2)+" € | "+usdVal.toFixed(2)+" USDT";
+  document.getElementById("fiat").textContent = 
+    `${eurVal.toFixed(2)} € | ${usdVal.toFixed(2)} USDT | ${rubVal.toFixed(2)} ₽`;
   animateValueGlow("xmrPerHour", displayedXMRHour, xmrPerHour,8," XMR/h");
-  animateValueGlow("xmrPerDay", displayedXMRDay, xmrPerDay,8," XMR/d");
+  animateValueGlow("xmrPerDay", displayedXMRDay, xmrPerDay,8," XMR/Tag");
 
   displayedHash = hash/1000;
   displayedXMR = xmr;
