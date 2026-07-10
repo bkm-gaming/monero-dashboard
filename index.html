@@ -3,116 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>Monero Dashboard</title>
-<style>
+<style type="text/css">
+/* ==========================================================
+   Basis / Reset - bewusst simpel gehalten fuer Android 2.1-2.3
+   ========================================================== */
+html, body {
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+}
 body {
-  margin:0; padding:0;
-  font-family:"Segoe UI", Arial, sans-serif;
-  overflow:hidden;
-  background: linear-gradient(-45deg, #1a1aff, #9d00ff, #1a1aff, #9d00ff);
-  background-size: 400% 400%;
-  animation: gradientBG 60s ease infinite;
-  transition: background 1s ease-in-out;
-  -webkit-tap-highlight-color: transparent;
+  font-family:"Segoe UI", Tahoma, Arial, sans-serif;
+  overflow-x:hidden;
+  background-color:#0a1730; /* Flat-Fallback fuer Browser ganz ohne Gradient-Support */
+  background-image:-webkit-gradient(linear, left top, right bottom, from(#050d1f), to(#173463));
+  background-image:-webkit-linear-gradient(135deg, #050d1f, #173463);
+  background-image:-moz-linear-gradient(135deg, #050d1f, #173463);
+  background-image:linear-gradient(135deg, #050d1f, #173463);
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-text-size-adjust:100%;
 }
-@keyframes gradientBG {
-  0% {background-position:0% 50%;}
-  50% {background-position:100% 50%;}
-  100% {background-position:0% 50%;}
-}
-canvas {position:fixed; top:0; left:0; width:100%; height:100%; z-index:0;}
 
+canvas#bgCanvas {
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+}
+
+/* ==========================================================
+   Aero-Fenster (Windows 7 Glass Look)
+   ========================================================== */
 .window {
-  position:relative; z-index:1;
+  position:relative;
+  z-index:1;
   max-width:600px;
-  margin:20px auto;
-  background: rgba(230,236,245,0.85);
-  border-radius:12px;
-  padding:20px;
-  box-shadow:0 8px 25px rgba(0,0,0,0.15);
-  opacity:0; transform:translateY(50px);
-  animation: fadeInUp 1s forwards;
-  transition: transform 0.3s, box-shadow 0.3s;
+  width:92%;
+  margin:22px auto;
+  background-color:#e9eff7; /* Fallback */
+  background-color:rgba(233,239,247,0.78);
+  border:1px solid rgba(255,255,255,0.65);
+  -webkit-border-radius:14px;
+  -moz-border-radius:14px;
+  border-radius:14px;
+  -webkit-box-shadow:0 10px 26px rgba(2,6,20,0.55), inset 0 1px 0 rgba(255,255,255,0.85);
+  box-shadow:0 10px 26px rgba(2,6,20,0.55), inset 0 1px 0 rgba(255,255,255,0.85);
+  overflow:hidden;
 }
-.window:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-}
-@keyframes fadeInUp {to {opacity:1; transform:translateY(0);}}
 
-.header {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:8px;
-  flex-wrap:nowrap;
-  margin-bottom:10px;
+/* Aero-Titelleiste mit Glasstreifen */
+.titlebar {
+  position:relative;
+  padding:12px 14px;
+  background-color:#2a72c4;
+  background-image:-webkit-gradient(linear, left top, left bottom, from(#6cb4f5), color-stop(0.5, #2a72c4), to(#123a6b));
+  background-image:-webkit-linear-gradient(top, #6cb4f5, #2a72c4 50%, #123a6b);
+  background-image:-moz-linear-gradient(top, #6cb4f5, #2a72c4 50%, #123a6b);
+  background-image:linear-gradient(to bottom, #6cb4f5, #2a72c4 50%, #123a6b);
+  border-bottom:1px solid rgba(255,255,255,0.35);
+}
+.sheen {
+  position:absolute;
+  top:0; left:0; right:0;
+  height:55%;
+  background-color:rgba(255,255,255,0.18);
+  background-image:-webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.55)), to(rgba(255,255,255,0)));
+  background-image:-webkit-linear-gradient(top, rgba(255,255,255,0.55), rgba(255,255,255,0));
+  background-image:linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0));
+}
+.header-row {
+  position:relative;
   text-align:center;
 }
 h1 {
   margin:0;
-  color:#0a5db6;
-  text-shadow: 0 0 5px #fff;
-  font-size:1.8rem;
+  padding:0;
+  color:#ffffff;
+  font-size:1.35rem;
+  font-weight:bold;
+  text-shadow:0 1px 2px rgba(0,0,0,0.55), 0 0 6px rgba(255,255,255,0.25);
   white-space:nowrap;
 }
 
-button.gradient-btn {
-  background: linear-gradient(90deg, #1a1aff, #9d00ff);
-  color:white;
-  border:none;
-  border-radius:8px;
-  width:38px;
-  height:38px;
-  font-size:20px;
-  cursor:pointer;
-  box-shadow:0 4px 10px rgba(0,0,0,0.2);
-  transition:all 0.3s;
-  flex-shrink:0;
-}
-button.gradient-btn:hover {
-  transform:scale(1.1);
-  box-shadow:0 8px 20px rgba(0,0,0,0.3);
-  filter:brightness(1.2);
-}
-button.gradient-btn:active {
-  transform:scale(0.95);
+.time {
+  text-align:center;
+  font-size:15px;
+  color:#123a6b;
+  font-weight:bold;
+  padding:10px 10px 2px 10px;
+  text-shadow:0 1px 0 rgba(255,255,255,0.7);
 }
 
+/* ==========================================================
+   Glas-Karten fuer die Kennzahlen
+   ========================================================== */
 .box {
-  background:rgba(255,255,255,0.9);
+  position:relative;
+  margin:12px 14px 0 14px;
+  padding:12px 14px;
+  background-color:#ffffff; /* Fallback */
+  background-color:rgba(255,255,255,0.55);
+  border:1px solid rgba(255,255,255,0.75);
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
   border-radius:10px;
-  padding:16px;
-  margin-bottom:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.08);
-  transition:transform 0.3s,box-shadow 0.3s,background 0.3s;
-  opacity:0; transform:translateY(20px);
-  animation:fadeInBox 0.8s forwards;
+  -webkit-box-shadow:0 4px 12px rgba(15,35,65,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
+  box-shadow:0 4px 12px rgba(15,35,65,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
 }
-.box:nth-child(2){animation-delay:0.2s;}
-.box:nth-child(3){animation-delay:0.4s;}
-.box:nth-child(4){animation-delay:0.6s;}
-@keyframes fadeInBox {to {opacity:1; transform:translateY(0);}}
-.box:hover {
-  transform:scale(1.05);
-  box-shadow:0 8px 24px rgba(0,0,0,0.2);
-  background:rgba(255,255,255,0.95);
+.box.last { margin-bottom:14px; }
+
+.small {
+  font-size:12px;
+  color:#3c5a78;
+  font-weight:bold;
+  text-transform:uppercase;
+  letter-spacing:0.03em;
+}
+.big {
+  font-size:24px;
+  font-weight:bold;
+  color:#0c2c50;
+  text-shadow:0 1px 0 rgba(255,255,255,0.75);
+}
+.big.paid {
+  font-size:18px;
+  color:#2f6b3a;
+}
+.muted {
+  font-size:12px;
+  color:#123a6b;
+  font-weight:bold;
+  text-align:right;
+  text-shadow:0 1px 0 rgba(255,255,255,0.7);
+  margin-top:2px;
+}
+.footer {
+  margin-top:6px;
+  padding:10px 14px 14px 14px;
+  font-size:11px;
+  color:#3c5a78;
+  text-align:center;
 }
 
-.small {font-size:13px; color:#4b6b85;}
-.big {font-size:28px; font-weight:700; color:#042b4a; transition:all 0.5s; text-shadow:0 0 2px #fff;}
-.muted {font-size:16px; color:#000; font-weight:700; text-align:right; transition:all 0.5s; text-shadow:0 0 2px #fff;}
-.footer {margin-top:12px; font-size:13px; color:#4b6b85; text-align:center;}
-.time {text-align:center; font-size:18px; color:#000; font-weight:700; margin-bottom:12px;}
+/* Glossy Aero/TouchWiz Pillenknopf fuer Text-Buttons */
+.pill-btn {
+  display:inline-block;
+  margin-top:10px;
+  padding:8px 16px;
+  border:1px solid rgba(255,255,255,0.65);
+  -webkit-border-radius:999px;
+  -moz-border-radius:999px;
+  border-radius:999px;
+  background-color:#2a72c4;
+  background-image:-webkit-gradient(linear, left top, left bottom, from(#8fd0ff), color-stop(0.5, #2a72c4), to(#123a6b));
+  background-image:-webkit-linear-gradient(top, #8fd0ff, #2a72c4 50%, #123a6b);
+  background-image:-moz-linear-gradient(top, #8fd0ff, #2a72c4 50%, #123a6b);
+  background-image:linear-gradient(to bottom, #8fd0ff, #2a72c4 50%, #123a6b);
+  color:#ffffff;
+  font-size:13px;
+  font-weight:bold;
+  text-align:center;
+  -webkit-box-shadow:0 3px 8px rgba(5,15,35,0.45), inset 0 1px 1px rgba(255,255,255,0.85);
+  box-shadow:0 3px 8px rgba(5,15,35,0.45), inset 0 1px 1px rgba(255,255,255,0.85);
+}
+.pill-btn:active {
+  -webkit-transform:scale(0.96);
+  transform:scale(0.96);
+}
+.pill-btn.wide {
+  display:block;
+  width:100%;
+  -webkit-box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  box-sizing:border-box;
+  margin-top:8px;
+}
 
-@media (max-width:480px){
-  h1 {font-size:1.5rem;}
-  button.gradient-btn {width:34px; height:34px; font-size:18px;}
-  .big {font-size:24px;}
-  .muted {font-size:14px;}
-  .time {font-size:16px;}
-  .box {padding:12px;}
-  .header {gap:6px;}
+/* Eingabefeld im Glasstil */
+.wallet-input {
+  display:block;
+  width:100%;
+  margin-top:8px;
+  padding:9px 10px;
+  font-size:13px;
+  color:#0c2c50;
+  background-color:rgba(255,255,255,0.85);
+  border:1px solid rgba(20,50,90,0.35);
+  -webkit-border-radius:6px;
+  -moz-border-radius:6px;
+  border-radius:6px;
+  -webkit-box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  box-sizing:border-box;
+  -webkit-box-shadow:inset 0 1px 3px rgba(15,35,65,0.25);
+  box-shadow:inset 0 1px 3px rgba(15,35,65,0.25);
+}
+
+/* Kleine Ergebnis-/Miner-Liste */
+.worker-list {
+  margin-top:10px;
+  border:1px solid rgba(20,50,90,0.2);
+  -webkit-border-radius:8px;
+  -moz-border-radius:8px;
+  border-radius:8px;
+  background-color:rgba(255,255,255,0.7);
+  overflow:hidden;
+}
+.worker-row {
+  padding:8px 10px;
+  border-bottom:1px solid rgba(20,50,90,0.12);
+  font-size:13px;
+  color:#123a6b;
+}
+.worker-row.empty {
+  color:#6b7f95;
+  font-style:italic;
+  text-align:center;
+}
+.worker-name {
+  font-weight:bold;
+  margin-right:10px;
+}
+.worker-hash {
+  float:right;
+  color:#0c2c50;
+}
+
+/* Schmaler Bildschirm */
+@media (max-width:480px) {
+  h1 { font-size:1.15rem; }
+  .big { font-size:20px; }
+  .big.paid { font-size:15px; }
+  .time { font-size:13px; }
+  .box { padding:10px 12px; }
 }
 </style>
 </head>
@@ -120,172 +247,398 @@ button.gradient-btn:active {
 <canvas id="bgCanvas"></canvas>
 
 <div class="window">
-  <div class="header">
-    <h1>Monero Dashboard V2</h1>
-    <button class="gradient-btn" onclick="cycleGradient()">🎨</button>
+  <div class="titlebar">
+    <div class="sheen"></div>
+    <div class="header-row">
+      <h1>Monero Dashboard</h1>
+    </div>
   </div>
 
-  <div class="time" id="realtime">—</div>
+  <div class="time" id="realtime">--</div>
 
   <div class="box">
     <div class="small">Miner Hashrate</div>
-    <div id="walletHash" class="big">— kH/s</div>
+    <div id="walletHash" class="big">-- kH/s</div>
+    <button type="button" class="pill-btn" onclick="toggleWorkerList()" id="workerToggleBtn">Miner anzeigen</button>
+    <div class="worker-list" id="workerListPanel" style="display:none;"></div>
   </div>
 
   <div class="box">
-    <div class="small">Balance</div>
-    <div id="xmr" class="big">— XMR</div>
-    <div class="muted" id="fiat">— € | — USDT | — ₽</div>
+    <div class="small">Kontostand</div>
+    <div id="xmr" class="big">-- XMR</div>
+    <div class="muted" id="fiatBalance">-- &euro; | -- &#8381;</div>
+    <div class="small" style="margin-top:8px;">Bereits ausgezahlt</div>
+    <div id="xmrPaid" class="big paid">-- XMR</div>
+    <div class="muted" id="fiatPaid">-- &euro; | -- &#8381;</div>
   </div>
 
-  <div class="box">
-    <div class="small">Geschätzter XMR-Ertrag</div>
-    <div id="xmrPerHour" class="big">— XMR/h</div>
-    <div id="xmrPerDay" class="big">— XMR/Tag</div>
+  <div class="box last">
+    <div class="small">Andere Wallet pruefen</div>
+    <input type="text" id="otherWalletInput" class="wallet-input" placeholder="Wallet-Adresse eingeben">
+    <button type="button" class="pill-btn wide" onclick="checkOtherWallet()">Abfragen</button>
+    <div class="worker-list" id="otherWalletResult" style="display:none;"></div>
   </div>
 
   <div class="footer">BKM-737 Production Est. 2025</div>
 </div>
 
-<script>
-const WALLET = "47nybMBMcGoBMGZ4djZ8XmZ67SBPg3auKiGRFnFkybugdPrvERpHTv7gs2thMVaTvEQdDNHK29g1fjYiJn2e3ingVXazGCa";
-const REFRESH_WALLET = 10000;
-const REFRESH_PRICE = 60000;
-const WALLET_STATS_API = `https://api.moneroocean.stream/miner/${WALLET}/stats`;
-const PRICE_API = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=eur,usd,rub";
-const POOL_STATS_API = "https://api.moneroocean.stream/pool/stats";
+<script type="text/javascript">
 
-let lastPrice = { eur:0, usd:0, rub:0 };
-let lastPriceTime = 0;
-let displayedHash = 0;
-let displayedXMR = 0;
-let displayedXMRHour = 0;
-let displayedXMRDay = 0;
+/* ======================================================================
+   Kompatibilitaets-Hinweis:
+   Dieses Skript verzichtet bewusst auf ES6+ (const/let, Arrow-Functions,
+   Template-Strings, Promise/async-await, fetch, Array.forEach-Kettung).
+   Stattdessen: var, normale function-Ausdruecke, String-Verkettung und
+   XMLHttpRequest. Damit laeuft es auch im alten Android-Stock-Browser
+   (2.1 / 2.3.5), waehrend es auf aktuellen Desktop-Browsern genauso
+   funktioniert.
 
-function safeNumber(v){ return (typeof v==='number' && !isNaN(v))?v:0; }
-async function fetchJson(url){
-  try { const r = await fetch(url,{cache:"no-store"}); if(r.ok) return await r.json(); }
-  catch(e){ console.warn("Fetch failed:", url, e); }
-  return null;
+   API-Hinweis:
+   MoneroOcean basiert auf der cryptonote-nodejs-pool Software. Die
+   Endpunkte /miner/<adresse>/stats und /miner/<adresse>/chart/allWorkersHash
+   sind nicht offiziell dokumentiert. Die Feldnamen unten (hash, amtDue,
+   amtPaid) entsprechen dem oeffentlich bekannten Format dieser Pool-
+   Software. Sollte sich am Server etwas aendern, kann es sein, dass du
+   die Feldnamen unten anpassen musst (z.B. per Browser-Devtools pruefen,
+   was die API tatsaechlich zurueckgibt).
+   ====================================================================== */
+
+// Aktiviert :active auf alten Android-WebKit-Browsern (bekannter Trick)
+if (document.addEventListener) {
+  document.addEventListener('touchstart', function () {}, false);
 }
 
-function animateValueGlow(id, current, target, decimals=2, unit=""){
-  const elem = document.getElementById(id);
-  const diff = target - current;
-  const step = diff/10;
-  let val = current;
-  let count = 0;
-  const interval = setInterval(()=>{
-    val += step;
-    count++;
-    if(count>=10){ val = target; clearInterval(interval); }
-    elem.textContent = val.toFixed(decimals) + unit;
-    elem.style.textShadow = "0 0 8px #ff0";
-    setTimeout(()=>{ elem.style.textShadow="0 0 2px #fff"; }, 200);
-  }, 50);
-}
+var API_BASE = "https://api.moneroocean.stream";
+var PRICE_API = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=eur,rub";
+var MY_WALLET = "47nybMBMcGoBMGZ4djZ8XmZ67SBPg3auKiGRFnFkybugdPrvERpHTv7gs2thMVaTvEQdDNHK29g1fjYiJn2e3ingVXazGCa";
+var REFRESH_WALLET = 10000;
+var REFRESH_PRICE = 60000;
 
-async function updateWallet(){
-  const stats = await fetchJson(WALLET_STATS_API) || {};
-  let hash = safeNumber(stats.hash || 0);
-  hash *= 0.95 + Math.random()*0.1;
-  const amtDue = safeNumber(stats.amtDue || stats.amount || stats.balance || 0);
-  const xmr = amtDue/1e12;
+var displayed = { hash: 0, xmr: 0, xmrPaid: 0 };
+var workerPanelOpen = false;
+var lastPrice = { eur: 0, rub: 0 };
+var lastPriceTime = 0;
 
-  if(Date.now()-lastPriceTime>REFRESH_PRICE){
-    const priceResp = await fetchJson(PRICE_API);
-    if(priceResp && priceResp.monero){
-      lastPrice.eur = safeNumber(priceResp.monero.eur);
-      lastPrice.usd = safeNumber(priceResp.monero.usd);
-      lastPrice.rub = safeNumber(priceResp.monero.rub);
-      lastPriceTime = Date.now();
-    }
+// Holt die aktuellen EUR/RUB-Kurse (mit Cache, damit nicht bei jedem
+// Update erneut angefragt wird) und ruft dann callback() auf
+function ensurePrice(callback) {
+  var now = (new Date()).getTime();
+  if (now - lastPriceTime <= REFRESH_PRICE && lastPriceTime !== 0) {
+    callback();
+    return;
   }
-
-  const eurVal = xmr*lastPrice.eur;
-  const usdVal = xmr*lastPrice.usd;
-  const rubVal = xmr*lastPrice.rub;
-
-  const poolStats = await fetchJson(POOL_STATS_API) || {};
-  const poolHashrate = safeNumber(poolStats.hashrate || 1e9); 
-  const blockReward = safeNumber(poolStats.reward || 0.6);
-  const blockTimeSec = 120;
-  const blocksPerHour = 3600 / blockTimeSec;
-  const xmrPerHour = (hash / poolHashrate) * blockReward * blocksPerHour;
-  const xmrPerDay = xmrPerHour * 24;
-
-  animateValueGlow("walletHash", displayedHash, hash/1000,2," kH/s");
-  animateValueGlow("xmr", displayedXMR, xmr,8," XMR");
-  document.getElementById("fiat").textContent = 
-    `${eurVal.toFixed(2)} € | ${usdVal.toFixed(2)} USDT | ${rubVal.toFixed(2)} ₽`;
-  animateValueGlow("xmrPerHour", displayedXMRHour, xmrPerHour,8," XMR/h");
-  animateValueGlow("xmrPerDay", displayedXMRDay, xmrPerDay,8," XMR/Tag");
-
-  displayedHash = hash/1000;
-  displayedXMR = xmr;
-  displayedXMRHour = xmrPerHour;
-  displayedXMRDay = xmrPerDay;
+  getJSON(PRICE_API, function (priceResp) {
+    if (priceResp && priceResp.monero) {
+      lastPrice.eur = safeNumber(priceResp.monero.eur);
+      lastPrice.rub = safeNumber(priceResp.monero.rub);
+      lastPriceTime = (new Date()).getTime();
+    }
+    callback();
+  });
 }
 
-function updateTime(){
-  const now = new Date();
-  document.getElementById("realtime").textContent = now.toLocaleDateString()+" "+now.toLocaleTimeString();
+function formatFiat(xmrAmount) {
+  var eurVal = xmrAmount * lastPrice.eur;
+  var rubVal = xmrAmount * lastPrice.rub;
+  return eurVal.toFixed(2) + ' \u20AC | ' + rubVal.toFixed(2) + ' \u20BD';
 }
 
-updateWallet();
-setInterval(updateWallet, REFRESH_WALLET);
+function safeNumber(v) {
+  return (typeof v === 'number' && !isNaN(v)) ? v : 0;
+}
+
+function trimStr(s) {
+  return String(s).replace(/^\s+|\s+$/g, '');
+}
+
+function escapeHtml(s) {
+  s = String(s);
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// XMLHttpRequest statt fetch/Promise - funktioniert seit Android 2.1
+function getJSON(url, callback) {
+  var xhr;
+  try {
+    if (window.XMLHttpRequest) {
+      xhr = new XMLHttpRequest();
+    } else {
+      xhr = new ActiveXObject('Microsoft.XMLHTTP');
+    }
+  } catch (e) {
+    callback(null);
+    return;
+  }
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        var data = null;
+        try { data = JSON.parse(xhr.responseText); } catch (e2) { data = null; }
+        callback(data);
+      } else {
+        callback(null);
+      }
+    }
+  };
+  try {
+    xhr.open('GET', url, true);
+    xhr.send(null);
+  } catch (e3) {
+    callback(null);
+  }
+}
+
+// Sanfte Animation eines Zahlenwerts ohne CSS-Keyframes (max. Kompatibilitaet)
+function animateValue(id, from, to, decimals, suffix) {
+  var elem = document.getElementById(id);
+  if (!elem) { return; }
+  var steps = 12;
+  var stepVal = (to - from) / steps;
+  var current = from;
+  var count = 0;
+  var timer = setInterval(function () {
+    current += stepVal;
+    count += 1;
+    if (count >= steps) {
+      current = to;
+      clearInterval(timer);
+    }
+    elem.innerHTML = current.toFixed(decimals) + suffix;
+    elem.style.color = '#c47f00';
+    (function (target) {
+      setTimeout(function () { target.style.color = ''; }, 260);
+    }(elem));
+  }, 45);
+}
+
+// Holt Hashrate, Kontostand und ausgezahlten Betrag fuer eine Wallet
+function fetchWalletStats(address, callback) {
+  var url = API_BASE + "/miner/" + address + "/stats";
+  getJSON(url, function (data) {
+    if (!data) { callback(null); return; }
+    var hash = safeNumber(data.hash);
+    var amtDue = safeNumber(data.amtDue);
+    var amtPaid = safeNumber(data.amtPaid);
+    callback({
+      hashKh: hash / 1000,
+      xmr: amtDue / 1e12,
+      xmrPaid: amtPaid / 1e12
+    });
+  });
+}
+
+// Holt die Liste aller Miner/Worker samt Hashrate fuer eine Wallet.
+// Die MoneroOcean-API liefert unter /miner/<adresse>/chart/allWorkersHash
+// ein Objekt, dessen Schluessel die Worker-Namen sind (plus ein "global"-
+// Schluessel als Summe ueber alle Worker). Jeder Wert ist ein Array von
+// Zeitreihen-Punkten der Form { ts: <zeitstempel>, hs: <hashrate>, hs2: <...> }.
+// Wir nehmen jeweils den letzten (aktuellsten) Punkt.
+function fetchWorkerList(address, callback) {
+  var url = API_BASE + "/miner/" + address + "/chart/allWorkersHash";
+  getJSON(url, function (data) {
+    if (!data || typeof data !== 'object') { callback([]); return; }
+    var list = [];
+    var key;
+    for (key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        if (key === 'global') { continue; }
+        var series = data[key];
+        var hashVal = 0;
+        if (series && series.length) {
+          var last = series[series.length - 1];
+          if (last) {
+            if (typeof last.hs !== 'undefined') {
+              hashVal = safeNumber(last.hs);
+            } else if (typeof last.length !== 'undefined' && last.length >= 2) {
+              // Fallback fuer den Fall, dass die API doch [zeit, hash]-Paare liefert
+              hashVal = safeNumber(last[1]);
+            } else if (typeof last === 'number') {
+              hashVal = safeNumber(last);
+            }
+          }
+        }
+        list.push({ name: key, hash: hashVal / 1000 });
+      }
+    }
+    // Falls es keine benannten Worker gibt (nur der globale Sammel-Wert),
+    // zeigen wir trotzdem einen Eintrag an, statt eine leere Liste
+    if (list.length === 0 && Object.prototype.hasOwnProperty.call(data, 'global')) {
+      var globalSeries = data.global;
+      var globalHash = 0;
+      if (globalSeries && globalSeries.length) {
+        var lastGlobal = globalSeries[globalSeries.length - 1];
+        if (lastGlobal && typeof lastGlobal.hs !== 'undefined') {
+          globalHash = safeNumber(lastGlobal.hs);
+        }
+      }
+      list.push({ name: 'Miner (ohne Worker-Namen)', hash: globalHash / 1000 });
+    }
+    list.sort(function (a, b) { return b.hash - a.hash; });
+    callback(list);
+  });
+}
+
+function renderWorkerRows(list) {
+  if (!list || list.length === 0) {
+    return '<div class="worker-row empty">Keine Miner-Daten verfuegbar.</div>';
+  }
+  var html = '';
+  var i;
+  for (i = 0; i < list.length; i += 1) {
+    html += '<div class="worker-row"><span class="worker-name">' + escapeHtml(list[i].name) +
+      '</span><span class="worker-hash">' + list[i].hash.toFixed(2) + ' kH/s</span></div>';
+  }
+  return html;
+}
+
+function toggleWorkerList() {
+  var panel = document.getElementById('workerListPanel');
+  if (!panel) { return; }
+  if (workerPanelOpen) {
+    panel.style.display = 'none';
+    workerPanelOpen = false;
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="worker-row empty">Lade...</div>';
+  workerPanelOpen = true;
+  fetchWorkerList(MY_WALLET, function (list) {
+    panel.innerHTML = renderWorkerRows(list);
+  });
+}
+
+function checkOtherWallet() {
+  var input = document.getElementById('otherWalletInput');
+  var resultBox = document.getElementById('otherWalletResult');
+  if (!input || !resultBox) { return; }
+  var addr = trimStr(input.value || '');
+  if (!addr) {
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = '<div class="worker-row empty">Bitte eine Wallet-Adresse eingeben.</div>';
+    return;
+  }
+  resultBox.style.display = 'block';
+  resultBox.innerHTML = '<div class="worker-row empty">Lade...</div>';
+
+  fetchWalletStats(addr, function (stats) {
+    fetchWorkerList(addr, function (list) {
+      ensurePrice(function () {
+        var html;
+        if (!stats) {
+          html = '<div class="worker-row empty">Keine Daten fuer diese Adresse gefunden.</div>';
+        } else {
+          html = '';
+          html += '<div class="worker-row"><span class="worker-name">Miner Hashrate</span>' +
+            '<span class="worker-hash">' + stats.hashKh.toFixed(2) + ' kH/s</span></div>';
+          html += '<div class="worker-row"><span class="worker-name">Kontostand</span>' +
+            '<span class="worker-hash">' + stats.xmr.toFixed(8) + ' XMR</span></div>';
+          html += '<div class="worker-row"><span class="worker-name">&nbsp;</span>' +
+            '<span class="worker-hash">' + formatFiat(stats.xmr) + '</span></div>';
+          html += '<div class="worker-row"><span class="worker-name">Ausgezahlt</span>' +
+            '<span class="worker-hash">' + stats.xmrPaid.toFixed(8) + ' XMR</span></div>';
+          html += '<div class="worker-row"><span class="worker-name">&nbsp;</span>' +
+            '<span class="worker-hash">' + formatFiat(stats.xmrPaid) + '</span></div>';
+          html += '<div class="worker-row"><span class="worker-name">Anzahl Miner</span>' +
+            '<span class="worker-hash">' + (list ? list.length : 0) + '</span></div>';
+        }
+        resultBox.innerHTML = html;
+      });
+    });
+  });
+}
+
+function updateOwnWallet() {
+  fetchWalletStats(MY_WALLET, function (result) {
+    if (!result) { return; }
+    ensurePrice(function () {
+      animateValue('walletHash', displayed.hash, result.hashKh, 2, ' kH/s');
+      animateValue('xmr', displayed.xmr, result.xmr, 8, ' XMR');
+      animateValue('xmrPaid', displayed.xmrPaid, result.xmrPaid, 8, ' XMR');
+
+      var fiatBalanceElem = document.getElementById('fiatBalance');
+      if (fiatBalanceElem) { fiatBalanceElem.innerHTML = formatFiat(result.xmr); }
+      var fiatPaidElem = document.getElementById('fiatPaid');
+      if (fiatPaidElem) { fiatPaidElem.innerHTML = formatFiat(result.xmrPaid); }
+
+      displayed.hash = result.hashKh;
+      displayed.xmr = result.xmr;
+      displayed.xmrPaid = result.xmrPaid;
+    });
+  });
+  // Wenn die Miner-Liste gerade offen ist, gleich mit aktualisieren
+  if (workerPanelOpen) {
+    var panel = document.getElementById('workerListPanel');
+    fetchWorkerList(MY_WALLET, function (list) {
+      if (panel) { panel.innerHTML = renderWorkerRows(list); }
+    });
+  }
+}
+
+function updateTime() {
+  var now = new Date();
+  var elem = document.getElementById('realtime');
+  if (elem) {
+    elem.innerHTML = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  }
+}
+
+updateOwnWallet();
+setInterval(updateOwnWallet, REFRESH_WALLET);
 updateTime();
-setInterval(updateTime,1000);
+setInterval(updateTime, 1000);
 
-// Hintergrund Partikel-Effekt
-const canvas = document.getElementById('bgCanvas');
-const ctx = canvas.getContext('2d');
-let w, h;
-function resizeCanvas(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
-window.addEventListener('resize',resizeCanvas);
+/* ======================================================================
+   Hintergrund: leichter weisser Partikel-Effekt per Canvas + setInterval
+   (kein requestAnimationFrame - auf altem Android nicht verfuegbar)
+   ====================================================================== */
+var canvas = document.getElementById('bgCanvas');
+var ctx = (canvas && canvas.getContext) ? canvas.getContext('2d') : null;
+var w = 0, h = 0;
+
+function resizeCanvas() {
+  if (!canvas) { return; }
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+if (window.addEventListener) {
+  window.addEventListener('resize', resizeCanvas, false);
+} else if (window.attachEvent) {
+  window.attachEvent('onresize', resizeCanvas);
+}
 resizeCanvas();
 
-const particles = [];
-for(let i=0;i<50;i++){
-  particles.push({
-    x:Math.random()*w,
-    y:Math.random()*h,
-    r:Math.random()*3+1,
-    dx:(Math.random()-0.5)*0.5,
-    dy:(Math.random()-0.5)*0.5
-  });
+var particles = [];
+if (ctx) {
+  var i;
+  for (i = 0; i < 40; i += 1) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 2.4 + 0.6,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3
+    });
+  }
 }
 
-function animateParticles(){
-  ctx.clearRect(0,0,w,h);
-  particles.forEach(p=>{
-    p.x += p.dx; p.y += p.dy;
-    if(p.x<0||p.x>w) p.dx*=-1;
-    if(p.y<0||p.y>h) p.dy*=-1;
+function drawParticles() {
+  if (!ctx) { return; }
+  ctx.clearRect(0, 0, w, h);
+  var j, p;
+  for (j = 0; j < particles.length; j += 1) {
+    p = particles[j];
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > w) { p.dx *= -1; }
+    if (p.y < 0 || p.y > h) { p.dy *= -1; }
     ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,0.2)';
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, false);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fill();
-  });
-  requestAnimationFrame(animateParticles);
+  }
 }
-animateParticles();
+if (ctx) { setInterval(drawParticles, 45); }
 
-// Farbverlauf-Wechsel
-const gradients = [
-  "linear-gradient(-45deg, #1a1aff, #9d00ff, #1a1aff, #9d00ff)",
-  "linear-gradient(-45deg, #ff0, #ffa500, #ff4500, #ff0)",
-  "linear-gradient(-45deg, #00ff6a, #00aaff, #00ff6a, #00aaff)",
-  "linear-gradient(-45deg, #ff1493, #ff66cc, #ff1493, #ffffff)",
-  "linear-gradient(-45deg, #ffffff, #cccccc, #ffffff, #999999)"
-];
-let gradientIndex = 0;
-function cycleGradient() {
-  gradientIndex = (gradientIndex + 1) % gradients.length;
-  document.body.style.background = gradients[gradientIndex];
-  document.body.style.backgroundSize = "400% 400%";
-  document.body.style.animation = "gradientBG 60s ease infinite";
-}
 </script>
 </body>
 </html>
